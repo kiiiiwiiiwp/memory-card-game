@@ -14,6 +14,7 @@
         background: #050810;
         color: #f8fafc;
         overflow-x: hidden;
+        margin: 0;
       }
       .font-orbitron {
         font-family: 'Orbitron', sans-serif;
@@ -22,7 +23,7 @@
         perspective: 1000px;
       }
       .card-inner {
-        transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
         transform-style: preserve-3d;
       }
       .card-flipped .card-inner {
@@ -36,40 +37,53 @@
         width: 100%;
         height: 100%;
         border-radius: 0.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
       }
       .card-front {
         transform: rotateY(180deg);
-        background: #111827;
+        background: #0f172a;
       }
       .card-back {
         background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
         border: 2px solid #334155;
       }
       @keyframes pulse-glow {
-        0%, 100% { opacity: 0.5; transform: scale(1); }
-        50% { opacity: 0.8; transform: scale(1.1); }
+        0%, 100% { opacity: 0.4; transform: scale(1); }
+        50% { opacity: 0.7; transform: scale(1.15); }
       }
       .glow-bg {
-        filter: blur(20px);
-        animation: pulse-glow 2s infinite;
+        filter: blur(25px);
+        animation: pulse-glow 3s infinite;
       }
       .grid-bg {
-        background-image: linear-gradient(rgba(34, 211, 238, 0.05) 1px, transparent 1px),
-                          linear-gradient(90deg, rgba(34, 211, 238, 0.05) 1px, transparent 1px);
-        background-size: 40px 40px;
+        background-image: linear-gradient(rgba(34, 211, 238, 0.03) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(34, 211, 238, 0.03) 1px, transparent 1px);
+        background-size: 50px 50px;
       }
       @keyframes scan {
         from { top: -10%; }
         to { top: 110%; }
       }
       .animate-scan {
-        animation: scan 3s linear infinite;
+        animation: scan 4s linear infinite;
       }
       .shadow-glow {
-        filter: drop-shadow(0 0 5px currentColor);
+        filter: drop-shadow(0 0 8px currentColor);
+      }
+      /* 胜利粒子动画 */
+      @keyframes float-particle {
+        0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+        50% { opacity: 0.8; }
+        100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+      }
+      .particle {
+        position: fixed;
+        bottom: -20px;
+        width: 10px;
+        height: 10px;
+        background: #22d3ee;
+        border-radius: 50%;
+        pointer-events: none;
+        animation: float-particle 4s infinite linear;
       }
     </style>
     <script type="importmap">
