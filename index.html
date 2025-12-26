@@ -86,6 +86,10 @@
         animation: float-particle 4s infinite linear;
       }
     </style>
+    <script>
+      // 确保 process.env 访问不会导致 ReferenceError
+      window.process = window.process || { env: {} };
+    </script>
     <script type="importmap">
 {
   "imports": {
@@ -101,5 +105,7 @@
   </head>
   <body class="grid-bg min-h-screen">
     <div id="root"></div>
+    <!-- 显式加载入口脚本 -->
+    <script type="module" src="index.tsx"></script>
   </body>
 </html>
