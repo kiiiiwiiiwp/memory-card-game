@@ -87,8 +87,7 @@
       }
     </style>
     <script>
-      // 确保 process.env 访问不会导致 ReferenceError
-      window.process = window.process || { env: {} };
+      window.process = { env: { API_KEY: "" } };
     </script>
     <script type="importmap">
 {
@@ -105,7 +104,6 @@
   </head>
   <body class="grid-bg min-h-screen">
     <div id="root"></div>
-    <!-- 显式加载入口脚本 -->
     <script type="module" src="index.tsx"></script>
   </body>
 </html>
