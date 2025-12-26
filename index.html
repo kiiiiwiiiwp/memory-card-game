@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -58,25 +57,10 @@
       .animate-scan {
         animation: scan 4s linear infinite;
       }
-      @keyframes float-particle {
-        0% { transform: translateY(0) rotate(0deg); opacity: 0; }
-        50% { opacity: 0.8; }
-        100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
-      }
-      .particle {
-        position: fixed;
-        bottom: -20px;
-        width: 10px;
-        height: 10px;
-        background: #22d3ee;
-        border-radius: 50%;
-        pointer-events: none;
-        animation: float-particle 4s infinite linear;
-      }
       #error-overlay {
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.9);
+        background: rgba(0,0,0,0.95);
         color: #ff4444;
         padding: 20px;
         z-index: 10000;
@@ -87,15 +71,15 @@
       }
     </style>
     <script>
-      window.onerror = function(msg, url, line) {
+      // Diagnostic tool: catch all runtime errors and display them on screen
+      window.onerror = function(msg, url, line, col, error) {
         const overlay = document.getElementById('error-overlay');
         if (overlay) {
           overlay.style.display = 'block';
-          overlay.innerHTML += `\n[RUNTIME ERROR] ${msg}\n`;
+          overlay.innerHTML += `\n[CRITICAL ERROR] ${msg}\nLocation: ${url}:${line}:${col}\n${error ? error.stack : ''}\n`;
         }
         return false;
       };
-      window.process = { env: { API_KEY: "" } };
       console.log("System: HTML Environment Initialized.");
     </script>
     <script type="importmap">

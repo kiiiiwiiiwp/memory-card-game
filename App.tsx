@@ -1,14 +1,11 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GameStatus, Card, LEVELS, CARD_DATA } from './types';
 import MemoryCard from './components/MemoryCard';
 import { getVictoryMessage } from './services/geminiService';
 
-console.log("App.tsx: Module loaded.");
+console.log("App.tsx: Module initiated.");
 
 const App: React.FC = () => {
-  console.log("App.tsx: Component function called.");
-
   const [status, setStatus] = useState<GameStatus>('START');
   const [currentLevelIdx, setCurrentLevelIdx] = useState(0);
   const [cards, setCards] = useState<Card[]>([]);
@@ -18,25 +15,39 @@ const App: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [victoryMessage, setVictoryMessage] = useState<string>('');
   const [levelStartTime, setLevelStartTime] = useState(0);
-  const [levelTimesSpent, setLevelTimesSpent] = useState<number[]>([]);
 
   const timerRef = useRef<number | null>(null);
   const currentLevel = LEVELS[currentLevelIdx];
 
+  // Initialize a specific level
   const initLevel = useCallback((levelIdx: number, bonusTime: number = 0) => {
-    console.log(`App.tsx: Initializing Level ${levelIdx + 1} with bonus ${bonusTime}s`);
+    console.log(`[CHRONOS LOG] Level Initialization Phase: Index ${levelIdx}, Bonus: ${bonusTime}s`);
+    
     const level = LEVELS[levelIdx];
+    if (!level) {
+      console.error("[CHRONOS LOG] FATAL: Level definition missing for index", levelIdx);
+      return;
+    }
+
     const pairCount = Math.floor((level.rows * level.cols) / 2);
     const selectedData = [...CARD_DATA].sort(() => Math.random() - 0.5).slice(0, pairCount);
     
     const newCards: Card[] = [];
     selectedData.forEach((data, index) => {
-      const cardBase = { value: data.icon, icon: data.icon, color: data.color, isFlipped: false, isMatched: false };
+      const cardBase = { 
+        value: data.icon, 
+        icon: data.icon, 
+        color: data.color, 
+        isFlipped: false, 
+        isMatched: false 
+      };
       newCards.push({ ...cardBase, id: index * 2 });
       newCards.push({ ...cardBase, id: index * 2 + 1 });
     });
 
     const totalTime = level.baseTime + bonusTime;
+    console.log(`[CHRONOS LOG] Timer set to ${totalTime}s (Base ${level.baseTime} + Bonus ${bonusTime})`);
+
     setCards(newCards.sort(() => Math.random() - 0.5));
     setTimeLeft(totalTime);
     setLevelStartTime(totalTime);
@@ -44,92 +55,28 @@ const App: React.FC = () => {
     setFlippedCards([]);
     setIsProcessing(false);
     setStatus('PLAYING');
+    console.log(`[CHRONOS LOG] Sector ${levelIdx + 1} synchronized.`);
   }, []);
 
+  // Entry point: Start from Level 1
   const startGame = () => {
-    console.log("App.tsx: Game started.");
+    console.log("[CHRONOS LOG] Simulation start requested.");
     setCurrentLevelIdx(0);
-    setLevelTimesSpent([]);
     initLevel(0, 0);
   };
 
+  // Transition: Carry over time to next level
   const nextLevel = () => {
-    const bonus = timeLeft;
+    const remainingTime = timeLeft;
     const nextIdx = currentLevelIdx + 1;
+    console.log(`[CHRONOS LOG] Transitioning to Sector ${nextIdx + 1}. Carrying over ${remainingTime}s.`);
     setCurrentLevelIdx(nextIdx);
-    initLevel(nextIdx, bonus);
+    initLevel(nextIdx, remainingTime);
   };
 
-  const handleCardClick = (id: number) => {
-    if (isProcessing || flippedCards.length === 2) return;
-
-    setCards(prev => prev.map(c => c.id === id ? { ...c, isFlipped: true } : c));
-    const newFlipped = [...flippedCards, id];
-    setFlippedCards(newFlipped);
-
-    if (newFlipped.length === 2) {
-      checkMatch(newFlipped);
-    }
-  };
-
-  const checkMatch = (flipped: number[]) => {
-    setIsProcessing(true);
-    const [id1, id2] = flipped;
-    const card1 = cards.find(c => c.id === id1)!;
-    const card2 = cards.find(c => c.id === id2)!;
-
-    if (card1.value === card2.value) {
-      setTimeout(() => {
-        setCards(prev => prev.map(c => 
-          (c.id === id1 || c.id === id2) ? { ...c, isMatched: true } : c
-        ));
-        
-        setMatches(m => {
-          const newMatches = m + 1;
-          const pairCount = Math.floor((currentLevel.rows * currentLevel.cols) / 2);
-          if (newMatches === pairCount) {
-            handleLevelWon();
-          }
-          return newMatches;
-        });
-        setFlippedCards([]);
-        setIsProcessing(false);
-      }, 500);
-    } else {
-      setTimeout(() => {
-        setCards(prev => prev.map(c => 
-          (c.id === id1 || c.id === id2) ? { ...c, isFlipped: false } : c
-        ));
-        setFlippedCards([]);
-        setIsProcessing(false);
-      }, 1000);
-    }
-  };
-
-  const handleLevelWon = () => {
-    const timeSpent = levelStartTime - timeLeft;
-    setLevelTimesSpent(prev => [...prev, timeSpent]);
-
-    if (currentLevelIdx === LEVELS.length - 1) {
-      setStatus('VICTORY');
-      generateVictory(timeLeft);
-    } else {
-      setStatus('LEVEL_WON');
-    }
-  };
-
-  const generateVictory = async (totalTime: number) => {
-    try {
-      const msg = await getVictoryMessage(totalTime, currentLevelIdx + 1);
-      setVictoryMessage(msg);
-    } catch (error) {
-      console.error("Victory Message Generation Error:", error);
-      setVictoryMessage("Cognitive synchronization complete. You have achieved peak mental efficiency.");
-    }
-  };
-
+  // Timer countdown logic
   useEffect(() => {
-    if (status === 'PLAYING') {
+    if (status === 'PLAYING' && timeLeft > 0) {
       timerRef.current = window.setInterval(() => {
         setTimeLeft(prev => {
           if (prev <= 1) {
@@ -140,153 +87,189 @@ const App: React.FC = () => {
           return prev - 1;
         });
       }, 1000);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [status]);
+  }, [status, timeLeft]);
+
+  // Matching logic
+  useEffect(() => {
+    if (flippedCards.length === 2) {
+      setIsProcessing(true);
+      const [id1, id2] = flippedCards;
+      const card1 = cards.find(c => c.id === id1);
+      const card2 = cards.find(c => c.id === id2);
+
+      if (card1 && card2 && card1.value === card2.value) {
+        // Match detected
+        setTimeout(() => {
+          setCards(prev => prev.map(c => 
+            (c.id === id1 || c.id === id2) ? { ...c, isMatched: true, isFlipped: true } : c
+          ));
+          setMatches(prev => {
+            const newMatches = prev + 1;
+            const totalPairs = (currentLevel.rows * currentLevel.cols) / 2;
+            if (newMatches === totalPairs) {
+              if (currentLevelIdx === LEVELS.length - 1) {
+                setStatus('VICTORY');
+                getVictoryMessage(timeLeft, currentLevelIdx + 1).then(msg => setVictoryMessage(msg));
+              } else {
+                setStatus('LEVEL_WON');
+              }
+            }
+            return newMatches;
+          });
+          setFlippedCards([]);
+          setIsProcessing(false);
+        }, 600);
+      } else {
+        // No match
+        setTimeout(() => {
+          setCards(prev => prev.map(c => 
+            (c.id === id1 || c.id === id2) ? { ...c, isFlipped: false } : c
+          ));
+          setFlippedCards([]);
+          setIsProcessing(false);
+        }, 1000);
+      }
+    }
+  }, [flippedCards, cards, currentLevelIdx, currentLevel, timeLeft]);
+
+  // Handle card click event
+  const handleCardClick = (id: number) => {
+    if (isProcessing || flippedCards.length === 2 || status !== 'PLAYING') return;
+
+    const targetCard = cards.find(c => c.id === id);
+    if (!targetCard || targetCard.isFlipped || targetCard.isMatched) return;
+
+    console.log(`[CHRONOS LOG] Node activated: ${id}`);
+
+    // Fix: Completed truncated logic and corrected shorthand property error
+    setCards(prev => prev.map(c => c.id === id ? { ...c, isFlipped: true } : c));
+    setFlippedCards(prev => [...prev, id]);
+  };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center p-4 font-mono overflow-x-hidden">
-      <header className="w-full max-w-4xl flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
-        <div className="flex flex-col">
-          <h1 className="text-3xl font-black bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent tracking-tighter">
-            CHRONOS QUEST
-          </h1>
-          <span className="text-[10px] text-slate-500 uppercase tracking-widest">Neural Synchrony v2.5</span>
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-4 font-mono overflow-hidden">
+      {status === 'START' && (
+        <div className="text-center space-y-12 max-w-lg w-full">
+          <div className="space-y-4">
+            <h1 className="text-7xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-cyan-300 via-blue-500 to-indigo-600 animate-pulse">
+              CHRONOS
+            </h1>
+            <p className="text-slate-500 uppercase tracking-[0.6em] text-[10px] font-bold">Memory Archiving Protocol v3.1</p>
+          </div>
+          <button 
+            onClick={startGame}
+            className="group relative px-12 py-5 bg-transparent border border-cyan-500/50 text-cyan-400 font-bold tracking-widest hover:text-slate-950 transition-all duration-300"
+          >
+            <span className="relative z-10">INITIALIZE SEQUENCE</span>
+            <div className="absolute inset-0 w-0 bg-cyan-400 transition-all duration-300 group-hover:w-full"></div>
+            <div className="absolute -top-1 -right-1 w-2 h-2 bg-cyan-500"></div>
+            <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-cyan-500"></div>
+          </button>
         </div>
-        
-        {status === 'PLAYING' && (
-          <div className="flex gap-4 md:gap-8 items-center">
-            <div className="flex flex-col items-end">
-              <span className="text-[10px] text-cyan-400 uppercase">Sector</span>
-              <span className="text-xl font-bold">{currentLevelIdx + 1} / {LEVELS.length}</span>
+      )}
+
+      {status === 'PLAYING' && (
+        <div className="w-full max-w-5xl space-y-8">
+          <div className="flex flex-col md:flex-row justify-between items-end gap-6 border-b border-slate-800 pb-6">
+            <div className="space-y-2">
+              <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">Sector Protocol 0{currentLevelIdx + 1}</p>
+              <div className="flex gap-2">
+                {Array.from({ length: Math.floor(currentLevel.rows * currentLevel.cols / 2) }).map((_, i) => (
+                  <div key={i} className={`h-1.5 w-6 rounded-sm transition-all duration-500 ${i < matches ? 'bg-cyan-400 shadow-[0_0_10px_cyan]' : 'bg-slate-800'}`}></div>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-col items-end min-w-[80px] md:min-w-[100px]">
-              <span className="text-[10px] text-rose-500 uppercase">Time</span>
-              <span className={`text-xl font-bold ${timeLeft < 10 ? 'text-rose-500 animate-pulse' : 'text-slate-100'}`}>
-                {timeLeft}s
-              </span>
+            <div className="text-right">
+              <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest mb-1">Temporal Buffer</p>
+              <div className={`text-5xl font-black tracking-tighter ${timeLeft < 10 ? 'text-rose-500 animate-pulse' : 'text-cyan-400'}`}>
+                {timeLeft}<span className="text-xl ml-1">S</span>
+              </div>
             </div>
           </div>
-        )}
-      </header>
 
-      <main className="w-full max-w-4xl flex-grow flex flex-col items-center justify-center">
-        {status === 'START' && (
-          <div className="text-center space-y-8">
-            <div className="relative inline-block">
-               <div className="absolute -inset-4 bg-cyan-500/20 blur-xl rounded-full"></div>
-               <i className="fas fa-microchip text-8xl text-cyan-400 relative"></i>
-            </div>
-            <div className="max-w-md">
-              <p className="text-slate-400 mb-6 text-sm leading-relaxed">
-                Welcome, Initiate. Your cognitive patterns will be tested through three levels of increasing complexity. Synchronize the data nodes before the system purge.
-              </p>
-              <button 
-                onClick={startGame}
-                className="px-8 py-4 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(8,145,178,0.4)] border border-cyan-400"
-              >
-                INITIALIZE COGNITIVE LINK
-              </button>
-            </div>
-          </div>
-        )}
-
-        {status === 'PLAYING' && (
           <div 
-            className="grid gap-3 md:gap-4 w-full justify-items-center"
+            className="grid gap-4 mx-auto"
             style={{ 
               gridTemplateColumns: `repeat(${currentLevel.cols}, minmax(0, 1fr))`,
-              maxWidth: currentLevel.cols * 120
+              maxWidth: currentLevel.cols * 150
             }}
           >
             {cards.map(card => (
               <MemoryCard 
                 key={card.id} 
                 card={card} 
-                onClick={() => handleCardClick(card.id)} 
+                onClick={() => handleCardClick(card.id)}
                 disabled={isProcessing}
               />
             ))}
           </div>
-        )}
+        </div>
+      )}
 
-        {status === 'LEVEL_WON' && (
-          <div className="text-center space-y-6 max-w-sm">
-            <h2 className="text-4xl font-black text-cyan-400">LEVEL SYNCED</h2>
-            <p className="text-slate-400 text-sm">Core sequence complete. Remaining time will be transferred to next sector.</p>
-            <div className="bg-slate-900/50 p-6 border border-slate-800 rounded-xl">
-              <span className="text-slate-500 text-[10px] block mb-2 uppercase tracking-widest">Time Bonus Transferred</span>
-              <span className="text-3xl font-bold text-green-400">+{timeLeft}s</span>
-            </div>
-            <button 
-              onClick={nextLevel}
-              className="w-full px-8 py-4 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg transition-all shadow-[0_0_15px_rgba(8,145,178,0.3)]"
-            >
-              ADVANCE TO NEXT SECTOR
-            </button>
+      {status === 'LEVEL_WON' && (
+        <div className="text-center space-y-10">
+          <div className="space-y-4">
+            <div className="inline-block px-4 py-1 bg-cyan-500/10 border border-cyan-500/40 text-cyan-400 text-[10px] font-bold tracking-[0.3em] rounded-sm mb-4">SECTOR_STABILIZED</div>
+            <h2 className="text-6xl font-black italic text-white tracking-tight">SUCCESS</h2>
+            <p className="text-slate-400 text-sm">Temporal residue of {timeLeft}s integrated into next sequence.</p>
           </div>
-        )}
+          <button 
+            onClick={nextLevel}
+            className="px-12 py-4 bg-cyan-500 text-slate-950 font-black tracking-tighter hover:bg-cyan-400 transition-all shadow-[0_0_30px_rgba(34,211,238,0.3)]"
+          >
+            PROCEED TO NEXT SECTOR
+          </button>
+        </div>
+      )}
 
-        {status === 'VICTORY' && (
-          <div className="text-center space-y-8 max-w-xl px-4">
-            <div className="relative">
-              <div className="absolute inset-0 bg-yellow-500/10 blur-3xl rounded-full animate-pulse"></div>
-              <i className="fas fa-trophy text-8xl text-yellow-400 mb-4 relative drop-shadow-[0_0_20px_rgba(250,204,21,0.5)]"></i>
-            </div>
-            <h2 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-yellow-300 to-amber-500 bg-clip-text text-transparent">MISSION SUCCESS</h2>
-            
-            <div className="bg-slate-900/80 p-6 md:p-8 border border-slate-800 rounded-2xl relative overflow-hidden shadow-2xl">
-               <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500"></div>
-               <p className="italic text-base md:text-lg text-slate-200 leading-relaxed">
-                 "{victoryMessage || 'Processing mission debrief...'}"
-               </p>
-               <div className="mt-6 pt-6 border-t border-slate-800 grid grid-cols-2 gap-4">
-                  <div className="text-left">
-                    <span className="text-[10px] text-slate-500 uppercase block tracking-tighter">Time Remaining</span>
-                    <span className="text-2xl font-bold text-cyan-400">{timeLeft}s</span>
-                  </div>
-                  <div className="text-left">
-                    <span className="text-[10px] text-slate-500 uppercase block tracking-tighter">Sync Score</span>
-                    <span className="text-2xl font-bold text-cyan-400">{Math.floor(timeLeft * 100)}</span>
-                  </div>
-               </div>
-            </div>
-
-            <button 
-              onClick={startGame}
-              className="px-8 py-4 border-2 border-cyan-500 text-cyan-400 hover:bg-cyan-500 hover:text-white font-bold rounded-lg transition-all"
-            >
-              RESTART SIMULATION
-            </button>
+      {status === 'GAME_OVER' && (
+        <div className="text-center space-y-10">
+          <div className="space-y-4">
+            <h2 className="text-7xl font-black text-rose-600 italic tracking-tighter">DE-SYNC</h2>
+            <p className="text-slate-400 text-lg font-bold tracking-widest uppercase text-sm">Critical Memory Failure</p>
           </div>
-        )}
+          <button 
+            onClick={startGame}
+            className="px-12 py-4 border border-rose-600 text-rose-500 font-black tracking-widest hover:bg-rose-600 hover:text-white transition-all duration-300"
+          >
+            INITIATE SYSTEM RECOVERY
+          </button>
+        </div>
+      )}
 
-        {status === 'GAME_OVER' && (
-          <div className="text-center space-y-8">
-            <i className="fas fa-exclamation-triangle text-8xl text-rose-500 animate-pulse"></i>
-            <h2 className="text-4xl font-black text-rose-500">SYSTEM PURGE</h2>
-            <p className="text-slate-400">Cognitive link severed. Memory buffers exhausted.</p>
-            <button 
-              onClick={startGame}
-              className="px-8 py-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg transition-all shadow-[0_0_20px_rgba(225,29,72,0.4)]"
-            >
-              REINITIALIZE SYSTEM
-            </button>
+      {status === 'VICTORY' && (
+        <div className="max-w-3xl text-center space-y-10">
+          <div className="relative">
+            <div className="absolute inset-0 blur-[120px] bg-cyan-500/30 rounded-full animate-pulse"></div>
+            <div className="relative space-y-6">
+              <div className="flex justify-center">
+                <div className="w-20 h-20 rounded-full border-2 border-cyan-400 flex items-center justify-center shadow-[0_0_20px_cyan]">
+                  <i className="fas fa-microchip text-4xl text-cyan-400"></i>
+                </div>
+              </div>
+              <h2 className="text-7xl font-black text-white italic tracking-tighter">MASTER ARCHIVIST</h2>
+              <div className="p-8 bg-slate-900/40 border border-slate-800/60 rounded-sm backdrop-blur-md">
+                <p className="text-xl text-cyan-200 leading-relaxed font-medium italic">
+                  "{victoryMessage || "Transmitting encrypted victory sequence..."}"
+                </p>
+              </div>
+            </div>
           </div>
-        )}
-      </main>
-
-      <footer className="w-full max-w-4xl mt-8 pt-4 border-t border-slate-900 flex justify-between items-center text-[10px] text-slate-600 uppercase tracking-widest">
-        <div>Link Status: {status === 'PLAYING' ? <span className="text-green-500">Active</span> : 'Standby'}</div>
-        <div>Sector: 0x{currentLevelIdx + 1}7F</div>
-        <div>Encryption: AES-2048</div>
-      </footer>
+          <button 
+            onClick={startGame}
+            className="px-12 py-4 bg-slate-100 text-slate-950 font-black tracking-widest hover:bg-white transition-all"
+          >
+            NEW PROTOCOL
+          </button>
+        </div>
+      )}
     </div>
   );
 };
 
+// Fix: Added missing default export
 export default App;
