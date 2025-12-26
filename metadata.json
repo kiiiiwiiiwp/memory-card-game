@@ -1,5 +1,5 @@
 {
   "name": "Chronos Memory Quest",
-  "description": "A high-stakes memory matching game with three progressive levels. Master the challenge and carry over your saved time to conquer the final stage. Powered by Gemini for dynamic victory praise.",
+  "description": "一个高风险的赛博朋克风格记忆匹配游戏。通关三关，剩余时间自动累加至下一关。",
   "requestFramePermissions": []
 }

@@ -1,22 +1,15 @@
 
 import { GoogleGenAI } from "@google/genai";
 
-export const getVictoryMessage = async (totalTimeLeft: number, level: number) => {
+export const getVictoryMessage = async (totalTimeLeft: number) => {
   try {
-    // Fix: Always use process.env.API_KEY directly as a named parameter.
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `The player just won a memory card game! They finished all 3 levels with ${totalTimeLeft} seconds to spare. Provide a short (max 2 sentences), encouraging, and cool futuristic-themed victory message. Use a tone of a digital game master.`,
-      config: {
-        temperature: 0.8,
-        maxOutputTokens: 100
-      }
+      contents: `玩家赢得了记忆匹配游戏！最终剩余时间：${totalTimeLeft}秒。请提供一段非常简短（最多2句话）、鼓励且具有赛博朋克风格的中文贺词。`,
     });
-    // Fix: Access response.text as a property, not a method.
-    return response.text || "Mission Accomplished, Commander. You've conquered the Chronos Quest with time to spare.";
+    return response.text || "同步完成。你的认知水平超出了本系统的预测。";
   } catch (error) {
-    console.error("Gemini Error:", error);
-    return "Victory is yours! Your memory is unparalleled in this sector.";
+    return "胜利属于你！你的记忆力在当前星区无与伦比。";
   }
 };
