@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { GameStatus, Card, LEVELS, CARD_DATA } from './types.ts';
-import MemoryCard from './components/MemoryCard.tsx';
-import { getVictoryMessage } from './services/geminiService.ts';
+import { GameStatus, Card, LEVELS, CARD_DATA } from './types';
+import MemoryCard from './components/MemoryCard';
+import { getVictoryMessage } from './services/geminiService';
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<GameStatus>('START');

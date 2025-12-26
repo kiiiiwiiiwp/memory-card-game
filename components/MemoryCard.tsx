@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Card } from '../types.ts';
+import { Card } from '../types';
 
 interface MemoryCardProps {
   card: Card;
