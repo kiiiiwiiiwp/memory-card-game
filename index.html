@@ -58,9 +58,6 @@
       .animate-scan {
         animation: scan 4s linear infinite;
       }
-      .shadow-glow {
-        filter: drop-shadow(0 0 8px currentColor);
-      }
       @keyframes float-particle {
         0% { transform: translateY(0) rotate(0deg); opacity: 0; }
         50% { opacity: 0.8; }
@@ -90,14 +87,12 @@
       }
     </style>
     <script>
-      // 捕获启动时的任何错误并显示在屏幕上
       window.onerror = function(msg, url, line) {
         const overlay = document.getElementById('error-overlay');
         if (overlay) {
           overlay.style.display = 'block';
-          overlay.innerHTML += `\n[ERROR] ${msg} \n at ${url}:${line}\n`;
+          overlay.innerHTML += `\n[RUNTIME ERROR] ${msg}\n`;
         }
-        console.error("Caught error:", msg, url, line);
         return false;
       };
       window.process = { env: { API_KEY: "" } };

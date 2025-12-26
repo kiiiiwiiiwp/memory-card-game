@@ -20,7 +20,6 @@ const App: React.FC = () => {
   const [levelStartTime, setLevelStartTime] = useState(0);
   const [levelTimesSpent, setLevelTimesSpent] = useState<number[]>([]);
 
-  // Fixed: Use number for window.setInterval return type in browser
   const timerRef = useRef<number | null>(null);
   const currentLevel = LEVELS[currentLevelIdx];
 
@@ -73,7 +72,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Fixed: Completed the checkMatch logic which was truncated in the source
   const checkMatch = (flipped: number[]) => {
     setIsProcessing(true);
     const [id1, id2] = flipped;
@@ -81,24 +79,23 @@ const App: React.FC = () => {
     const card2 = cards.find(c => c.id === id2)!;
 
     if (card1.value === card2.value) {
-      // Success: Match detected
       setTimeout(() => {
         setCards(prev => prev.map(c => 
           (c.id === id1 || c.id === id2) ? { ...c, isMatched: true } : c
         ));
         
-        const newMatches = matches + 1;
-        setMatches(newMatches);
+        setMatches(m => {
+          const newMatches = m + 1;
+          const pairCount = Math.floor((currentLevel.rows * currentLevel.cols) / 2);
+          if (newMatches === pairCount) {
+            handleLevelWon();
+          }
+          return newMatches;
+        });
         setFlippedCards([]);
         setIsProcessing(false);
-
-        const pairCount = Math.floor((currentLevel.rows * currentLevel.cols) / 2);
-        if (newMatches === pairCount) {
-          handleLevelWon();
-        }
       }, 500);
     } else {
-      // Fail: No match, flip back
       setTimeout(() => {
         setCards(prev => prev.map(c => 
           (c.id === id1 || c.id === id2) ? { ...c, isFlipped: false } : c
@@ -109,7 +106,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Fixed: Implemented missing handleLevelWon logic
   const handleLevelWon = () => {
     const timeSpent = levelStartTime - timeLeft;
     setLevelTimesSpent(prev => [...prev, timeSpent]);
@@ -122,18 +118,16 @@ const App: React.FC = () => {
     }
   };
 
-  // Fixed: Implemented victory message generation with Gemini AI
   const generateVictory = async (totalTime: number) => {
     try {
       const msg = await getVictoryMessage(totalTime, currentLevelIdx + 1);
       setVictoryMessage(msg);
     } catch (error) {
       console.error("Victory Message Generation Error:", error);
-      setVictoryMessage("Neural link established. You have surpassed all cognitive benchmarks.");
+      setVictoryMessage("Cognitive synchronization complete. You have achieved peak mental efficiency.");
     }
   };
 
-  // Fixed: Implemented game timer logic with proper cleanup
   useEffect(() => {
     if (status === 'PLAYING') {
       timerRef.current = window.setInterval(() => {
@@ -154,7 +148,6 @@ const App: React.FC = () => {
     };
   }, [status]);
 
-  // Fixed: Added return statement with the UI layout to resolve the component type error
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center p-4 font-mono overflow-x-hidden">
       <header className="w-full max-w-4xl flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
@@ -183,7 +176,7 @@ const App: React.FC = () => {
 
       <main className="w-full max-w-4xl flex-grow flex flex-col items-center justify-center">
         {status === 'START' && (
-          <div className="text-center space-y-8 animate-in fade-in zoom-in duration-700">
+          <div className="text-center space-y-8">
             <div className="relative inline-block">
                <div className="absolute -inset-4 bg-cyan-500/20 blur-xl rounded-full"></div>
                <i className="fas fa-microchip text-8xl text-cyan-400 relative"></i>
@@ -222,11 +215,11 @@ const App: React.FC = () => {
         )}
 
         {status === 'LEVEL_WON' && (
-          <div className="text-center space-y-6 animate-in slide-in-from-bottom duration-500 max-w-sm">
+          <div className="text-center space-y-6 max-w-sm">
             <h2 className="text-4xl font-black text-cyan-400">LEVEL SYNCED</h2>
-            <p className="text-slate-400">Core sequence complete. Remaining time will be transferred to next sector.</p>
+            <p className="text-slate-400 text-sm">Core sequence complete. Remaining time will be transferred to next sector.</p>
             <div className="bg-slate-900/50 p-6 border border-slate-800 rounded-xl">
-              <span className="text-slate-500 text-sm block mb-2 uppercase">Time Bonus Transferred</span>
+              <span className="text-slate-500 text-[10px] block mb-2 uppercase tracking-widest">Time Bonus Transferred</span>
               <span className="text-3xl font-bold text-green-400">+{timeLeft}s</span>
             </div>
             <button 
@@ -239,7 +232,7 @@ const App: React.FC = () => {
         )}
 
         {status === 'VICTORY' && (
-          <div className="text-center space-y-8 max-w-xl animate-in fade-in zoom-in duration-1000 px-4">
+          <div className="text-center space-y-8 max-w-xl px-4">
             <div className="relative">
               <div className="absolute inset-0 bg-yellow-500/10 blur-3xl rounded-full animate-pulse"></div>
               <i className="fas fa-trophy text-8xl text-yellow-400 mb-4 relative drop-shadow-[0_0_20px_rgba(250,204,21,0.5)]"></i>
@@ -248,16 +241,16 @@ const App: React.FC = () => {
             
             <div className="bg-slate-900/80 p-6 md:p-8 border border-slate-800 rounded-2xl relative overflow-hidden shadow-2xl">
                <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500"></div>
-               <p className="italic text-base md:text-lg text-slate-200 leading-relaxed font-sans">
+               <p className="italic text-base md:text-lg text-slate-200 leading-relaxed">
                  "{victoryMessage || 'Processing mission debrief...'}"
                </p>
                <div className="mt-6 pt-6 border-t border-slate-800 grid grid-cols-2 gap-4">
                   <div className="text-left">
-                    <span className="text-[10px] text-slate-500 uppercase block">Total Time Remaining</span>
+                    <span className="text-[10px] text-slate-500 uppercase block tracking-tighter">Time Remaining</span>
                     <span className="text-2xl font-bold text-cyan-400">{timeLeft}s</span>
                   </div>
                   <div className="text-left">
-                    <span className="text-[10px] text-slate-500 uppercase block">Cognitive Score</span>
+                    <span className="text-[10px] text-slate-500 uppercase block tracking-tighter">Sync Score</span>
                     <span className="text-2xl font-bold text-cyan-400">{Math.floor(timeLeft * 100)}</span>
                   </div>
                </div>
@@ -273,7 +266,7 @@ const App: React.FC = () => {
         )}
 
         {status === 'GAME_OVER' && (
-          <div className="text-center space-y-8 animate-in fade-in zoom-in">
+          <div className="text-center space-y-8">
             <i className="fas fa-exclamation-triangle text-8xl text-rose-500 animate-pulse"></i>
             <h2 className="text-4xl font-black text-rose-500">SYSTEM PURGE</h2>
             <p className="text-slate-400">Cognitive link severed. Memory buffers exhausted.</p>
@@ -296,5 +289,4 @@ const App: React.FC = () => {
   );
 };
 
-// Fixed: Added missing default export to satisfy index.tsx import
 export default App;
