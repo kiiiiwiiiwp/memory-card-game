@@ -86,6 +86,7 @@
       }
     </style>
     <script>
+      // 预定义 process 环境对象，系统会自动注入真正的 API_KEY
       window.process = { env: { API_KEY: "" } };
     </script>
     <script type="importmap">
